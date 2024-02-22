@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-
-const socket = new WebSocket("ws://localhost:5000")
+ 
+const socket = new WebSocket(process.env.NEXT_PUBLIC_APIURL!)
 
 export default function Page() {
 
