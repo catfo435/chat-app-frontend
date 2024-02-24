@@ -23,7 +23,7 @@ export default function UserPane({active = false}: UserPaneProps) {
         {active?<div className='activePaneTriangle w-0 h-0 border-r-[30px] border-r-slate-200 border-y-[15px] border-y-transparent border-solid'></div>:""}
         </div>
       </div>
-      <Divider percentageWidth={80} />
+      <Divider/>
     </div>
   )
 }
