@@ -10,9 +10,11 @@ export default function Page() {
 
   const [messages,setMessages] = useState<Array<any>>([])
   const [messageVal,setMessageVal] = useState("")
+  const user = localStorage.getItem("user")
 
   useEffect(() => {
     socket.onmessage = ({data}) => {
+    data = JSON.parse(data)
     setMessages(messages => {
       messages=[...messages,data]
       return messages
@@ -21,7 +23,7 @@ export default function Page() {
   },[])
 
   function handleSendMessage(){
-    socket.send(messageVal)
+    socket.send(JSON.stringify({message:messageVal,toUser:"user2"}))
     setMessageVal("")
   }
 
@@ -48,8 +50,12 @@ export default function Page() {
         </div>
         <Divider/>
         </div>
-        <div className='textHistory flex flex-col justify-end items-end w-full grow p-10'>
-          {messages.map((message) => (<TextPane message={message} timestamp='03:00'/>))}
+        <div className='textHistory flex flex-col justify-end items-center w-full grow p-10'>
+          {messages.map((message) => (
+            <div className={`textMessage flex w-full h-12 ${(message["toUser"] === user)?"justify-start":"justify-end"} mb-2`}>
+              <TextPane sent={message["toUser"] !== user} message={message["message"]} timestamp='03:00'/>
+            </div>
+          ))}
         </div>
         <Divider/>
         <div className='textInputField flex justify-start items-center h-20 ml-10'>
