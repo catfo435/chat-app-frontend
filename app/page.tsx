@@ -4,7 +4,7 @@ import UserPane from './components/UserPane'
 import Divider from './components/Divider'
 import TextPane from './components/TextPane'
 
-const socket = new WebSocket(process.env.NEXT_PUBLIC_APIURL!)
+const socket = new WebSocket(process.env.NEXT_PUBLIC_SOCKETURL!)
 
 export default function Page() {
 

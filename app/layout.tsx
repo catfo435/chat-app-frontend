@@ -3,7 +3,7 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
-  title: "Wing chat app",
+  title: "Chat app",
   description: "Chat with your wingies!",
 };
 
