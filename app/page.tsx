@@ -20,7 +20,7 @@ export default function Page() {
   const [messageVal,setMessageVal] = useState("")
   const [loginState,setLoginState] = useState(false)
   const [username,setUsername] = useState("")
-  const [selectedUser,setSelectedUser] = useState("user2"); //change this later
+  const [selectedUser,setSelectedUser] = useState(""); //change this later
 
   const params = useSearchParams()
 
@@ -33,6 +33,7 @@ export default function Page() {
     else {
       setLoginState(true)
       setUsername(params.get('user')!)
+      setSelectedUser(params.get('user') === "user1"?"user2":"user1")
       socket.auth = { username : params.get('user')! }
       socket.connect()
     }
@@ -43,23 +44,19 @@ export default function Page() {
       setMessages(data.messages)
     })
     )
-
-    socket.on("message", ({ message, sender, receiver }) => {
-      //check if sender is active, or put unread messages
-      //track dms active with an array
-
-      setMessages(messages => (
-        messages = [...messages,{message,sender,receiver}]
-      ))
-
-    });
   },[])
+
+  socket.on("message", ({ message, sender, receiver }) => {
+    //check if sender is active, or put unread messages
+    //track dms active with an array
+    
+    setMessages([...messages,{message,sender,receiver}])
+
+  });
 
   function handleSendMessage(){
     socket.emit("message",{message:messageVal,sender:username,receiver:selectedUser})
-    setMessages(messages => (
-      messages = [...messages,{message:messageVal,sender:username,receiver:selectedUser}]
-    ))
+    setMessages([...messages,{message:messageVal,sender:username,receiver:selectedUser}])
     setMessageVal("")
   }
 
@@ -87,8 +84,8 @@ export default function Page() {
         <Divider/>
         </div>
         <div className='textHistory flex flex-col justify-end items-center w-full h-[800px] overflow-y-scroll p-10'>
-          {messages.map((message) => (
-            <div className={`textMessage flex w-full h-12 ${(message.receiver === username)?"justify-start":"justify-end"} mb-2`}>
+          {messages.map((message,index) => (
+            <div key={index} className={`textMessage flex w-full h-12 ${(message.receiver === username)?"justify-start":"justify-end"} mb-2`}>
               <TextPane sent={message.receiver !== username} message={message["message"]} timestamp='03:00'/>
             </div>
           ))}
