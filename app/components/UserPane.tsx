@@ -3,9 +3,11 @@ import Divider from './Divider'
 
 type UserPaneProps = {
   active? : boolean
+  username : string
+  lastMessage : string
 }
 
-export default function UserPane({active = false}: UserPaneProps) {
+export default function UserPane({active = false,username,lastMessage}: UserPaneProps) {
   return (
     <div className='flex flex-col mb-5'>
       <div className='userPane flex h-20 w-full'>
@@ -13,8 +15,8 @@ export default function UserPane({active = false}: UserPaneProps) {
             <div className='flex justify-center items-center bg-[#BCC7D6] h-14 w-14 rounded-full'></div>
         </div>
         <div className='userDetails flex flex-col w-52'>
-          <div className='flex font-bold'>Username</div>
-          <div className='flex'>This is the last message</div>
+          <div className='flex font-bold'>{username}</div>
+          <div className='flex'>{lastMessage}</div>
         </div>
         <div className='lastMessageTime text-slate-500 w-20 text-right'>
           03:00
