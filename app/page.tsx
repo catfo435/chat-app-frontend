@@ -4,8 +4,9 @@ import UserPane from './components/UserPane'
 import Divider from './components/Divider'
 import TextPane from './components/TextPane'
 import { useSearchParams } from 'next/navigation'
+import { io } from "socket.io-client";
 
-const socket = new WebSocket(process.env.NEXT_PUBLIC_SOCKETURL!)
+const socket = io(process.env.NEXT_PUBLIC_APIURL!,{autoConnect : false})
 
 type Message = {
   message : string,
@@ -18,7 +19,8 @@ export default function Page() {
   const [messages,setMessages] = useState<Array<Message>>([])
   const [messageVal,setMessageVal] = useState("")
   const [loginState,setLoginState] = useState(false)
-  const [user,setUser] = useState("")
+  const [username,setUsername] = useState("")
+  const [selectedUser,setSelectedUser] = useState("user2"); //change this later
 
   const params = useSearchParams()
 
@@ -30,7 +32,9 @@ export default function Page() {
     }
     else {
       setLoginState(true)
-      setUser(params.get('user')!)
+      setUsername(params.get('user')!)
+      socket.auth = { username : params.get('user')! }
+      socket.connect()
     }
 
     fetch(process.env.NEXT_PUBLIC_APIURL! + "/getmessages")
@@ -40,17 +44,22 @@ export default function Page() {
     })
     )
 
-    socket.onmessage = ({data}) => {
-    data = JSON.parse(data)
-    setMessages(messages => {
-      messages=[...messages,data]
-      return messages
-    })
-    }
+    socket.on("message", ({ message, sender, receiver }) => {
+      //check if sender is active, or put unread messages
+      //track dms active with an array
+
+      setMessages(messages => (
+        messages = [...messages,{message,sender,receiver}]
+      ))
+
+    });
   },[])
 
   function handleSendMessage(){
-    socket.send(JSON.stringify({message:messageVal,toUser:"user2"}))
+    socket.emit("message",{message:messageVal,sender:username,receiver:selectedUser})
+    setMessages(messages => (
+      messages = [...messages,{message:messageVal,sender:username,receiver:selectedUser}]
+    ))
     setMessageVal("")
   }
 
@@ -77,10 +86,10 @@ export default function Page() {
         </div>
         <Divider/>
         </div>
-        <div className='textHistory flex flex-col justify-end items-center w-full grow p-10'>
+        <div className='textHistory flex flex-col justify-end items-center w-full h-[800px] overflow-y-scroll p-10'>
           {messages.map((message) => (
-            <div className={`textMessage flex w-full h-12 ${(message.receiver === user)?"justify-start":"justify-end"} mb-2`}>
-              <TextPane sent={message.receiver !== user} message={message["message"]} timestamp='03:00'/>
+            <div className={`textMessage flex w-full h-12 ${(message.receiver === username)?"justify-start":"justify-end"} mb-2`}>
+              <TextPane sent={message.receiver !== username} message={message["message"]} timestamp='03:00'/>
             </div>
           ))}
         </div>
