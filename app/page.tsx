@@ -38,7 +38,7 @@ export default function Page() {
       socket.connect()
     }
 
-    fetch(process.env.NEXT_PUBLIC_APIURL! + "/getmessages")
+    fetch(process.env.NEXT_PUBLIC_APIURL! + "/messages")
     .then((res) => (res.json())
     .then((data) => {
       setMessages(data.messages)

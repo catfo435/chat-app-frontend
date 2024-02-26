@@ -16,7 +16,7 @@ export default function Page() {
       password : password
     }
 
-    const requestURL = signUpState?(process.env.NEXT_PUBLIC_APIURL! + "/newuser"):(process.env.NEXT_PUBLIC_APIURL! + "/authenticate")
+    const requestURL = signUpState?(process.env.NEXT_PUBLIC_APIURL! + "/users"):(process.env.NEXT_PUBLIC_APIURL! + "/users/login")
     fetch(requestURL,{
       method : "post",
       headers: {
