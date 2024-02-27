@@ -5,6 +5,9 @@ import Divider from './components/Divider'
 import TextPane from './components/TextPane'
 import { useSearchParams } from 'next/navigation'
 import { io } from "socket.io-client";
+import useIsAuthenticated from 'react-auth-kit/hooks/useIsAuthenticated'
+import useAuthUser from 'react-auth-kit/hooks/useAuthUser'
+import useSignOut from 'react-auth-kit/hooks/useSignOut'
 
 const socket = io(process.env.NEXT_PUBLIC_APIURL!,{autoConnect : false})
 
@@ -12,6 +15,10 @@ type Message = {
   message : string,
   sender : string,
   receiver : string
+}
+
+type User = {
+  username : string
 }
 
 export default function Page() {
@@ -24,17 +31,24 @@ export default function Page() {
 
   const params = useSearchParams()
 
+  const isAuthenticated = useIsAuthenticated()
+  const auth = useAuthUser<User>()
+  const signOut = useSignOut()
+
   useEffect(() => {
 
-    if (params.get('user') === null) {
+    if (!isAuthenticated()) {
       window.location.href = "/login"
       return;
     }
     else {
+
+      const user = auth!.username
+
       setLoginState(true)
-      setUsername(params.get('user')!)
-      setSelectedUser(params.get('user') === "user1"?"user2":"user1")
-      socket.auth = { username : params.get('user')! }
+      setUsername(user)
+      setSelectedUser(user === "user1"?"user2":"user1")
+      socket.auth = { username : user }
       socket.connect()
     }
 
@@ -60,10 +74,18 @@ export default function Page() {
     setMessageVal("")
   }
 
+  function handleLogout(){
+    signOut()
+    window.location.href = "/login"
+  }
+
   return (
     <div>
       {loginState?<div className='content flex w-screen h-screen'>
-      <div className='navBar flex bg-sky-600 h-full w-20'>
+      <div className='navBar relative flex bg-sky-600 h-full w-20'>
+        <div className='logoutBtnContainer absolute flex justify-center w-full h-10 bottom-3'>
+          <button className='logoutBtn bg-red-600 w-3/4 h-full rounded-lg' onClick={handleLogout}>Logout</button>
+        </div>
       </div>
       <div className='userList relative flex flex-col items-center bg-slate-300 h-full w-[400px]'>
         <div className='searchBarContainer flex justify-center items-center bg-[#BCC7D6] w-full h-20 mb-5'>

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import createStore from 'react-auth-kit/createStore';
+import Providers from "./components/Provider";
+
 
 export const metadata: Metadata = {
   title: "Chat app",
@@ -13,8 +16,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
+    <Providers>
+      <html lang="en">
+        <body>{children}</body>
+      </html>
+    </Providers>
   );
 }
