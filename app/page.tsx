@@ -3,13 +3,11 @@ import React, { useEffect, useState } from 'react'
 import UserPane from './components/UserPane'
 import Divider from './components/Divider'
 import TextPane from './components/TextPane'
-import { useSearchParams } from 'next/navigation'
-import { io } from "socket.io-client";
+import { Socket, io } from "socket.io-client";
 import useIsAuthenticated from 'react-auth-kit/hooks/useIsAuthenticated'
 import useAuthUser from 'react-auth-kit/hooks/useAuthUser'
 import useSignOut from 'react-auth-kit/hooks/useSignOut'
-
-const socket = io(process.env.NEXT_PUBLIC_APIURL!,{autoConnect : false})
+import useAuthHeader from 'react-auth-kit/hooks/useAuthHeader'
 
 type Message = {
   message : string,
@@ -21,44 +19,60 @@ type User = {
   username : string
 }
 
+const socket= io(process.env.NEXT_PUBLIC_APIURL!,{autoConnect : false})
+
 export default function Page() {
 
   const [messages,setMessages] = useState<Array<Message>>([])
+  const [lastMessage, setLastMessage] = useState("...")
   const [messageVal,setMessageVal] = useState("")
   const [loginState,setLoginState] = useState(false)
   const [username,setUsername] = useState("")
   const [selectedUser,setSelectedUser] = useState(""); //change this later
 
-  const params = useSearchParams()
-
   const isAuthenticated = useIsAuthenticated()
-  const auth = useAuthUser<User>()
+  const authHeader = useAuthHeader();
+  const headers =  {
+    authorization: authHeader!
+  }
+  const user = useAuthUser<User>()
   const signOut = useSignOut()
 
   useEffect(() => {
 
     if (!isAuthenticated()) {
-      window.location.href = "/login"
+      window.location.replace("/login")
       return;
     }
     else {
 
-      const user = auth!.username
-
       setLoginState(true)
-      setUsername(user)
-      setSelectedUser(user === "user1"?"user2":"user1")
-      socket.auth = { username : user }
+      setUsername(user!.username)
+      setSelectedUser(user!.username === "user1"?"user2":"user1")
+      socket.auth = {token : headers.authorization}
       socket.connect()
     }
 
-    fetch(process.env.NEXT_PUBLIC_APIURL! + "/messages")
-    .then((res) => (res.json())
-    .then((data) => {
-      setMessages(data.messages)
-    })
+    fetch(process.env.NEXT_PUBLIC_APIURL! + "/messages",{headers}
+    )
+    .then((res) => {
+
+      if (res.status == 403) {
+        alert("Authorization Failure")
+        signOut()
+        window.location.replace("/")
+      }
+
+      res.json()
+      .then((data) => {
+        setMessages(data.messages)
+        const lastMessageData : Message = data.messages[data.messages.length-1]
+        setLastMessage(`${(lastMessageData.sender === username)?"You":lastMessageData.sender} : ${lastMessageData.message}`)
+      })
+    }
     )
   },[])
+
 
   socket.on("message", ({ message, sender, receiver }) => {
     //check if sender is active, or put unread messages
@@ -75,6 +89,7 @@ export default function Page() {
   }
 
   function handleLogout(){
+    socket.disconnect()
     signOut()
     window.location.href = "/login"
   }
@@ -92,7 +107,7 @@ export default function Page() {
           <input className='searchBar flex h-1/2 w-[90%] rounded-xl px-4' placeholder='🔍  Search'></input>
         </div>
         <div className='userContainer flex flex-col w-full grow overflow-scroll'>
-          <UserPane active username={"User2"} lastMessage="last message" />
+          <UserPane active username={selectedUser} lastMessage={lastMessage}/>
           {/* change later, fetch from backend */}
         </div>
         <button className='addUserButton absolute right-4 bottom-4 bg-sky-500 w-16 h-16 text-3xl rounded-full'>+</button>
@@ -100,7 +115,7 @@ export default function Page() {
       <div className='textArea flex flex-col bg-slate-200 h-full grow'>
         <div className='userInfoHeaderContainer flex flex-col w-full h-20'>
         <div className='userInfoHeader flex flex-col w-full h-20 p-2 pl-10'>
-          <div className='flex font-bold text-3xl mb-1'>Username</div>
+          <div className='flex font-bold text-3xl mb-1'>{selectedUser}</div>
           <div className='flex text-slate-500 mb-2'>Last texted at 03:00</div>
         </div>
         <Divider/>
