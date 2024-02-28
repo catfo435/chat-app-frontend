@@ -3,11 +3,12 @@ import React, { useEffect, useState } from 'react'
 import UserPane from './components/UserPane'
 import Divider from './components/Divider'
 import TextPane from './components/TextPane'
-import { Socket, io } from "socket.io-client";
+import { io } from "socket.io-client";
 import useIsAuthenticated from 'react-auth-kit/hooks/useIsAuthenticated'
 import useAuthUser from 'react-auth-kit/hooks/useAuthUser'
 import useSignOut from 'react-auth-kit/hooks/useSignOut'
 import useAuthHeader from 'react-auth-kit/hooks/useAuthHeader'
+import AddUserModal from './components/AddUserModal'
 
 type Message = {
   message : string,
@@ -28,7 +29,9 @@ export default function Page() {
   const [messageVal,setMessageVal] = useState("")
   const [loginState,setLoginState] = useState(false)
   const [username,setUsername] = useState("")
-  const [selectedUser,setSelectedUser] = useState(""); //change this later
+  const [selectedUser,setSelectedUser] = useState("") //change this later
+
+  const [openModal, setOpenModal] = useState(false)
 
   const isAuthenticated = useIsAuthenticated()
   const authHeader = useAuthHeader();
@@ -53,11 +56,19 @@ export default function Page() {
       socket.connect()
     }
 
+    fetchMessageHistory()
+  },[])
+
+  useEffect(() => {
+    fetchMessageHistory()
+  },[selectedUser])
+
+  function fetchMessageHistory(){
     fetch(process.env.NEXT_PUBLIC_APIURL! + "/messages",{headers}
     )
     .then((res) => {
 
-      if (res.status == 403) {
+      if (res.status === 403) {
         alert("Authorization Failure")
         signOut()
         window.location.replace("/")
@@ -71,7 +82,7 @@ export default function Page() {
       })
     }
     )
-  },[])
+  }
 
 
   socket.on("message", ({ message, sender, receiver }) => {
@@ -97,6 +108,7 @@ export default function Page() {
   return (
     <div>
       {loginState?<div className='content flex w-screen h-screen'>
+      <AddUserModal openModal={openModal} setOpenModal={setOpenModal} setUser={setSelectedUser} />
       <div className='navBar relative flex bg-sky-600 h-full w-20'>
         <div className='logoutBtnContainer absolute flex justify-center w-full h-10 bottom-3'>
           <button className='logoutBtn bg-red-600 w-3/4 h-full rounded-lg' onClick={handleLogout}>Logout</button>
@@ -110,7 +122,7 @@ export default function Page() {
           <UserPane active username={selectedUser} lastMessage={lastMessage}/>
           {/* change later, fetch from backend */}
         </div>
-        <button className='addUserButton absolute right-4 bottom-4 bg-sky-500 w-16 h-16 text-3xl rounded-full'>+</button>
+        <button onClick={() => setOpenModal(true)} className='addUserButton absolute right-4 bottom-4 bg-sky-500 w-16 h-16 text-3xl rounded-full'>+</button>
       </div>
       <div className='textArea flex flex-col bg-slate-200 h-full grow'>
         <div className='userInfoHeaderContainer flex flex-col w-full h-20'>
@@ -133,7 +145,7 @@ export default function Page() {
           <button className='sendButton flex justify-center items-center bg-sky-500 w-36 h-12 rounded-lg' onClick={handleSendMessage}>Send</button>
         </div>
       </div>
-    </div>:""}
+    </div>:null}
     </div>
   )
 }
